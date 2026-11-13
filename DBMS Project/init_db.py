@@ -1,7 +1,8 @@
 """Create the database (if needed) and load schema, logic and seed data.
 
-Usage:  python init_db.py            -> full reset (schema + logic + sample data)
-        python init_db.py --no-seed  -> empty database with schema + logic only
+Usage:  python init_db.py                      -> full reset (schema + logic + sample data)
+        python init_db.py --no-seed            -> empty database with schema + logic only
+        python init_db.py --env .env.vercel    -> use another env file (e.g. the cloud database)
 """
 import os
 import sys
@@ -13,14 +14,23 @@ from psycopg.conninfo import conninfo_to_dict, make_conninfo
 from dotenv import load_dotenv
 
 ROOT = Path(__file__).parent
-load_dotenv(ROOT / ".env")
+env_file = ROOT / ".env"
+if "--env" in sys.argv:
+    env_file = ROOT / sys.argv[sys.argv.index("--env") + 1]
+load_dotenv(env_file, override=True)
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
+# prefer a direct (unpooled) connection when the host provides one (e.g. Neon)
+DATABASE_URL = os.environ.get("DATABASE_URL_UNPOOLED") or os.environ.get("DATABASE_URL")
 if not DATABASE_URL:
     sys.exit("DATABASE_URL is not set. Copy .env.example to .env and fill in your password.")
 
 
 def ensure_database():
+    try:                                        # already exists (always true on hosted Postgres)
+        psycopg.connect(DATABASE_URL).close()
+        return
+    except psycopg.OperationalError:
+        pass
     params = conninfo_to_dict(DATABASE_URL)
     dbname = params.get("dbname", "hostel_db")
     admin_dsn = make_conninfo(DATABASE_URL, dbname="postgres")

@@ -6,12 +6,16 @@ from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask, redirect, session, url_for
 
+from zoneinfo import ZoneInfo
+
 ROOT = Path(__file__).resolve().parent.parent
+IST = ZoneInfo("Asia/Kolkata")
 load_dotenv(ROOT / ".env")
 
 
 def create_app():
-    app = Flask(__name__)
+    # static files live in /public so Vercel's CDN serves them; Flask serves the same folder locally
+    app = Flask(__name__, static_folder=str(ROOT / "public" / "static"), static_url_path="/static")
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 
     from . import db
@@ -58,7 +62,7 @@ def create_app():
         if value is None:
             return "—"
         if isinstance(value, datetime):
-            return value.astimezone().strftime(fmt)
+            return value.astimezone(IST).strftime(fmt)   # server may run in UTC (e.g. on Vercel)
         if isinstance(value, date):
             return value.strftime("%d %b %Y")
         return value
@@ -76,6 +80,6 @@ def create_app():
 
     @app.context_processor
     def inject_today():
-        return {"today": date.today()}
+        return {"today": datetime.now(IST).date()}
 
     return app

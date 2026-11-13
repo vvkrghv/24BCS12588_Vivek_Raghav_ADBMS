@@ -8,8 +8,10 @@ from flask import g, session
 
 def get_db() -> psycopg.Connection:
     if "db" not in g:
+        # On Vercel/Neon use the direct (unpooled) URL: the pooler drops session settings
+        url = os.environ.get("DATABASE_URL_UNPOOLED") or os.environ["DATABASE_URL"]
         g.db = psycopg.connect(
-            os.environ["DATABASE_URL"],
+            url,
             row_factory=dict_row,
             autocommit=True,                       # each statement / CALL is its own transaction
             options="-c search_path=hostel,public",
