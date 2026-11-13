@@ -97,4 +97,4 @@ audit_log  (written by triggers)
 | Password security | bcrypt with `crypt()` / `gen_salt('bf')`, verified inside the DB |
 | Joins, `GROUP BY`/`HAVING`, subqueries, window functions, `UNION`, ranges, `EXPLAIN` | `04_reports.sql` |
 
-Link - https://hostel-management-system-wine-six.vercel.app/login
+Link - https://hostel-management-system-wine-six.vercel.app
