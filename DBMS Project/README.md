@@ -97,15 +97,4 @@ audit_log  (written by triggers)
 | Password security | bcrypt with `crypt()` / `gen_salt('bf')`, verified inside the DB |
 | Joins, `GROUP BY`/`HAVING`, subqueries, window functions, `UNION`, ranges, `EXPLAIN` | `04_reports.sql` |
 
-## Viva demo script (about 5 minutes)
-1. **Login** as admin and show the dashboard (all numbers come from views).
-2. **Rooms**: open a *full* room (red tile) and try to allocate a student. The trigger refuses: *"Room is already full"*.
-3. **Students → filter "Without room"**: open `23CSE023` and allocate a room. The occupancy on the room map goes up (trigger).
-4. On the same student, **move** them into a full room. The error shows, and the student is *still in the old room*
-   (the transaction rolled back).
-5. **Fees** → generate Semester 2 invoices (bulk `INSERT ... SELECT`). Run it again and **0** new invoices are created (`ON CONFLICT`).
-6. Open an unpaid invoice and pay more than the balance. The trigger rejects it. Pay part of it and the status becomes PARTIAL.
-7. **Complaints**: assign a staff member. The status flips to IN_PROGRESS automatically.
-8. Log in as a **student** (`23CSE025`) and apply for leave overlapping an existing request. The exclusion constraint rejects it.
-9. In psql/pgAdmin, show `SELECT * FROM hostel.audit_log ORDER BY log_id DESC LIMIT 10;`: every change above was logged with the username by a trigger.
-10. Run a few queries from `db/04_reports.sql` (window functions, self join, `EXPLAIN ANALYZE`).
+Link - https://hostel-management-system-wine-six.vercel.app/login
