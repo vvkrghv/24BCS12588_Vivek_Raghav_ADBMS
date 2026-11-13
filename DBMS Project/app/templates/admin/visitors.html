@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty %}
+{% block title %}Visitors{% endblock %}
+{% block heading %}Visitor log{% endblock %}
+{% block content %}
+<div class="card mb-3"><div class="card-header">Check in a visitor</div><div class="card-body">
+  <form method="post" class="row g-2 align-items-end">
+    <div class="col-md-4"><label class="form-label small">Visiting student</label>
+      <select name="student_id" class="form-select form-select-sm" required>
+        {% for r in residents %}<option value="{{ r.student_id }}">{{ r.name }} · {{ r.roll_no }} · {{ r.room_label }}</option>{% endfor %}</select></div>
+    <div class="col-md-3"><label class="form-label small">Visitor name</label><input name="visitor_name" class="form-control form-control-sm" required></div>
+    <div class="col-md-2"><label class="form-label small">Relation</label><input name="relation" class="form-control form-control-sm" required list="relations">
+      <datalist id="relations"><option>Father</option><option>Mother</option><option>Brother</option><option>Sister</option><option>Guardian</option><option>Friend</option></datalist></div>
+    <div class="col-md-2"><label class="form-label small">Phone</label><input name="phone" class="form-control form-control-sm" pattern="[0-9]{10}"></div>
+    <div class="col-md-1"><button class="btn btn-sm btn-primary w-100">In</button></div>
+  </form>
+</div></div>
+<div class="card"><div class="table-responsive">
+  <table class="table align-middle">
+    <thead><tr><th>Visitor</th><th>Relation</th><th>Phone</th><th>Visiting</th><th>In</th><th>Out</th><th></th></tr></thead>
+    <tbody>{% for v in visitors %}
+      <tr {% if not v.out_time %}class="table-warning"{% endif %}>
+        <td>{{ v.visitor_name }}</td><td>{{ v.relation }}</td><td>{{ v.phone or '—' }}</td>
+        <td>{{ v.student_name }}<div class="small text-muted">{{ v.roll_no }} · {{ v.room_label or '' }}</div></td>
+        <td class="small">{{ v.in_time|dt }}</td><td class="small">{{ v.out_time|dt }}</td>
+        <td>{% if not v.out_time %}<form method="post" action="{{ url_for('admin.visitor_checkout', vid=v.visitor_id) }}"><button class="btn btn-sm btn-outline-secondary">Check out</button></form>{% endif %}</td>
+      </tr>
+    {% else %}{{ empty(7) }}{% endfor %}</tbody>
+  </table>
+</div></div>
+{% endblock %}

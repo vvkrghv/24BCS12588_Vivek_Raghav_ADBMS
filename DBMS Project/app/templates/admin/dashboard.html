@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, empty %}
+{% block title %}Dashboard{% endblock %}
+{% block heading %}Dashboard{% endblock %}
+{% block content %}
+{% macro stat(label, value, icon, color, sub='', href='#') %}
+<div class="col-6 col-xl-3">
+  <a href="{{ href }}" class="text-decoration-none">
+  <div class="card stat h-100"><div class="d-flex justify-content-between align-items-start">
+    <div><div class="label">{{ label }}</div><div class="value">{{ value }}</div>
+      {% if sub %}<div class="small text-muted">{{ sub }}</div>{% endif %}</div>
+    <div class="icon bg-{{ color }}-subtle text-{{ color }}"><i class="bi bi-{{ icon }}"></i></div>
+  </div></div></a>
+</div>
+{% endmacro %}
+
+<div class="row g-3 mb-3">
+  {{ stat('Residents', stats.residents, 'people-fill', 'primary', stats.students ~ ' active students', url_for('admin.students')) }}
+  {{ stat('Free beds', stats.free_beds, 'door-open', 'success', 'of ' ~ stats.beds ~ ' total beds', url_for('admin.rooms')) }}
+  {{ stat('Pending dues', stats.dues|inr, 'exclamation-triangle', 'danger', stats.defaulters ~ ' students · collected ' ~ stats.collected|inr, url_for('admin.fees', status='UNPAID')) }}
+  {{ stat('Open complaints', stats.open_complaints, 'tools', 'warning', stats.pending_leaves ~ ' leave requests pending · ' ~ stats.visitors_inside ~ ' visitors inside', url_for('admin.complaints')) }}
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-8">
+    <div class="card h-100">
+      <div class="card-header">Block occupancy</div>
+      <div class="card-body"><canvas id="blockChart" height="110"></canvas></div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead><tr><th>Block</th><th>Warden</th><th>Rooms</th><th>Beds</th><th>Occupied</th><th style="width:30%">Occupancy</th></tr></thead>
+          <tbody>
+          {% for b in blocks %}
+            <tr>
+              <td><strong>{{ b.block_code }}</strong> · {{ b.block_name }} <span class="badge text-bg-light">{{ 'Boys' if b.gender == 'M' else 'Girls' }}</span></td>
+              <td>{{ b.warden_name or '—' }}</td>
+              <td>{{ b.total_rooms }}{% if b.rooms_in_maintenance %} <span class="text-muted small">({{ b.rooms_in_maintenance }} maint.)</span>{% endif %}</td>
+              <td>{{ b.total_beds }}</td><td>{{ b.occupied_beds }}</td>
+              <td><div class="progress" style="height:8px"><div class="progress-bar" style="width:{{ b.occupancy_pct or 0 }}%"></div></div>
+                  <span class="small text-muted">{{ b.occupancy_pct or 0 }}%</span></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header">Room status</div>
+      <div class="card-body"><canvas id="roomChart" height="200"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header">Complaints by category</div>
+      <div class="card-body"><canvas id="complaintChart" height="200"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between">Unresolved complaints <a href="{{ url_for('admin.complaints') }}" class="small">View all</a></div>
+      <div class="table-responsive"><table class="table table-sm align-middle">
+        <thead><tr><th>Room</th><th>Category</th><th>Issue</th><th>Priority</th><th>Status</th></tr></thead>
+        <tbody>
+        {% for c in recent_complaints %}
+          <tr><td>{{ c.room_label or '—' }}</td><td>{{ c.category|title }}</td>
+              <td class="text-truncate" style="max-width:240px">{{ c.description }}</td>
+              <td>{{ status_badge(c.priority) }}</td><td>{{ status_badge(c.status) }}</td></tr>
+        {% else %}{{ empty(5, 'No open complaints 🎉') }}{% endfor %}
+        </tbody></table></div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between">Pending leave requests <a href="{{ url_for('admin.leaves') }}" class="small">Review</a></div>
+      <div class="table-responsive"><table class="table table-sm align-middle">
+        <thead><tr><th>Student</th><th>From</th><th>To</th></tr></thead>
+        <tbody>
+        {% for l in pending_leaves %}
+          <tr><td>{{ l.name }}<div class="small text-muted">{{ l.roll_no }}</div></td><td>{{ l.from_date|d }}</td><td>{{ l.to_date|d }}</td></tr>
+        {% else %}{{ empty(3, 'No pending requests') }}{% endfor %}
+        </tbody></table></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+const blocks = {{ blocks|tojson }};
+new Chart(document.getElementById('blockChart'), {
+  type: 'bar',
+  data: {
+    labels: blocks.map(b => b.block_name),
+    datasets: [
+      { label: 'Occupied beds', data: blocks.map(b => b.occupied_beds), backgroundColor: '#2f6fed', borderRadius: 4 },
+      { label: 'Free beds', data: blocks.map(b => b.total_beds - b.occupied_beds), backgroundColor: '#c7d7fb', borderRadius: 4 }
+    ]
+  },
+  options: { indexAxis: 'y', scales: { x: { stacked: true }, y: { stacked: true } }, plugins: { legend: { position: 'bottom' } } }
+});
+const states = {{ room_states|tojson }};
+const stateColor = { EMPTY: '#52b788', PARTIAL: '#f4b942', FULL: '#e5484d', MAINTENANCE: '#9aa4b5' };
+new Chart(document.getElementById('roomChart'), {
+  type: 'doughnut',
+  data: { labels: states.map(s => s.occupancy_state), datasets: [{ data: states.map(s => s.n), backgroundColor: states.map(s => stateColor[s.occupancy_state]) }] },
+  options: { plugins: { legend: { position: 'right' } }, cutout: '62%' }
+});
+const cats = {{ complaints_by_cat|tojson }};
+new Chart(document.getElementById('complaintChart'), {
+  type: 'bar',
+  data: { labels: cats.map(c => c.category), datasets: [
+    { label: 'Open', data: cats.map(c => c.open), backgroundColor: '#e5484d', borderRadius: 3 },
+    { label: 'Resolved', data: cats.map(c => c.resolved), backgroundColor: '#52b788', borderRadius: 3 } ] },
+  options: { scales: { x: { stacked: true }, y: { stacked: true, ticks: { precision: 0 } } }, plugins: { legend: { position: 'bottom' } } }
+});
+</script>
+{% endblock %}

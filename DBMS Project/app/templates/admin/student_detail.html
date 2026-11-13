@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, empty %}
+{% block title %}{{ s.name }}{% endblock %}
+{% block heading %}<a href="{{ url_for('admin.students') }}" class="text-decoration-none text-muted">Students</a> / {{ s.name }}{% endblock %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card mb-3"><div class="card-body">
+      <div class="d-flex justify-content-between">
+        <div><h2 class="h5 mb-0">{{ s.name }}</h2><code>{{ s.roll_no }}</code>
+          {% if not s.is_active %}<span class="badge text-bg-secondary">inactive</span>{% endif %}</div>
+        <a href="{{ url_for('admin.student_edit', student_id=s.student_id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+      </div>
+      <dl class="row small mt-3 mb-0">
+        <dt class="col-5">Department</dt><dd class="col-7">{{ s.dept_name }}</dd>
+        <dt class="col-5">Year</dt><dd class="col-7">{{ s.year_of_study }}</dd>
+        <dt class="col-5">Gender</dt><dd class="col-7">{{ 'Male' if s.gender == 'M' else 'Female' }}</dd>
+        <dt class="col-5">DOB</dt><dd class="col-7">{{ s.dob|d }}</dd>
+        <dt class="col-5">Phone</dt><dd class="col-7">{{ s.phone }}</dd>
+        <dt class="col-5">Email</dt><dd class="col-7 text-break">{{ s.email or '—' }}</dd>
+        <dt class="col-5">Guardian</dt><dd class="col-7">{{ s.guardian_name or '—' }}<br>{{ s.guardian_phone or '' }}</dd>
+        <dt class="col-5">Address</dt><dd class="col-7">{{ s.address or '—' }}</dd>
+        <dt class="col-5">Admitted</dt><dd class="col-7">{{ s.admitted_on|d }}</dd>
+        <dt class="col-5">Balance due</dt><dd class="col-7 fw-semibold {% if s.balance > 0 %}text-danger{% endif %}">{{ s.balance|inr }}</dd>
+      </dl>
+      <div class="d-flex gap-2 mt-3">
+        <form method="post" action="{{ url_for('admin.student_toggle', student_id=s.student_id) }}"
+              onsubmit="return confirm('{{ 'Deactivate this student? Their room will be vacated.' if s.is_active else 'Reactivate this student?' }}')">
+          <button class="btn btn-sm btn-outline-{{ 'danger' if s.is_active else 'success' }}">{{ 'Deactivate' if s.is_active else 'Reactivate' }}</button></form>
+        <form method="post" action="{{ url_for('admin.student_reset_password', student_id=s.student_id) }}">
+          <button class="btn btn-sm btn-outline-secondary">Reset password</button></form>
+      </div>
+    </div></div>
+
+    <div class="card"><div class="card-header">Room</div><div class="card-body">
+      {% if current %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div><a class="h4 mb-0 text-decoration-none" href="{{ url_for('admin.room_detail', room_id=current.room_id) }}">{{ current.room_label }}</a>
+            <div class="small text-muted">{{ current.block_name }} · {{ current.type_code }} · since {{ current.allocated_on|d }}</div></div>
+        </div>
+        <form method="post" action="{{ url_for('admin.student_change_room', student_id=s.student_id) }}" class="mb-2">
+          <label class="form-label small">Move to another room</label>
+          <div class="input-group input-group-sm">
+            <select name="room_id" class="form-select">
+              {% for r in vacant if r.room_id != current.room_id %}<option value="{{ r.room_id }}">{{ r.room_label }} · {{ r.type_code }} · {{ r.vacancies }} free</option>{% endfor %}
+            </select>
+            <button class="btn btn-outline-primary">Move</button>
+          </div>
+        </form>
+        <form method="post" action="{{ url_for('admin.student_vacate', student_id=s.student_id) }}" onsubmit="return confirm('Vacate this room?')">
+          <button class="btn btn-sm btn-outline-danger w-100"><i class="bi bi-box-arrow-right"></i> Vacate room</button>
+        </form>
+      {% elif s.is_active %}
+        <p class="text-muted small">No room allocated.</p>
+        <form method="post" action="{{ url_for('admin.student_allocate', student_id=s.student_id) }}">
+          <label class="form-label small">Allocate room</label>
+          <div class="input-group input-group-sm">
+            <select name="room_id" class="form-select">
+              {% for r in vacant %}<option value="{{ r.room_id }}">{{ r.room_label }} · {{ r.type_code }} · {{ r.vacancies }} free</option>{% endfor %}
+            </select>
+            <button class="btn btn-primary">Allocate</button>
+          </div>
+        </form>
+      {% else %}<p class="text-muted small mb-0">Inactive students cannot hold a room.</p>{% endif %}
+    </div></div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card mb-3"><div class="card-header">Fees</div>
+      <div class="table-responsive"><table class="table table-sm align-middle">
+        <thead><tr><th>Term</th><th>Room type</th><th>Due date</th><th class="text-end">Amount</th><th class="text-end">Fine</th><th class="text-end">Paid</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        {% for i in invoices %}
+          <tr><td>{{ i.academic_year }} / S{{ i.semester }}</td><td>{{ i.type_code }}</td><td>{{ i.due_date|d }}</td>
+              <td class="text-end">{{ i.amount|inr }}</td><td class="text-end">{{ i.fine|inr }}</td><td class="text-end">{{ i.paid|inr }}</td>
+              <td>{{ status_badge(i.status) }}</td>
+              <td><a href="{{ url_for('admin.invoice', invoice_id=i.invoice_id) }}" class="btn btn-sm btn-light">Open</a></td></tr>
+        {% else %}{{ empty(8, 'No invoices yet') }}{% endfor %}
+        </tbody></table></div>
+    </div>
+    <div class="card mb-3"><div class="card-header">Room history</div>
+      <div class="table-responsive"><table class="table table-sm align-middle">
+        <thead><tr><th>Room</th><th>From</th><th>To</th><th>Status</th><th>Remarks</th></tr></thead>
+        <tbody>
+        {% for h in history %}
+          <tr><td>{{ h.room_label }} <span class="small text-muted">{{ h.type_code }}</span></td><td>{{ h.allocated_on|d }}</td><td>{{ h.vacated_on|d }}</td>
+              <td>{{ status_badge(h.status) }}</td><td class="small">{{ h.remarks or '' }}</td></tr>
+        {% else %}{{ empty(5) }}{% endfor %}
+        </tbody></table></div>
+    </div>
+    <div class="row g-3">
+      <div class="col-md-6"><div class="card h-100"><div class="card-header">Complaints</div>
+        <ul class="list-group list-group-flush small">
+          {% for c in complaints %}<li class="list-group-item d-flex justify-content-between"><span>{{ c.category|title }}: {{ c.description|truncate(40) }}</span>{{ status_badge(c.status) }}</li>
+          {% else %}<li class="list-group-item text-muted">None</li>{% endfor %}
+        </ul></div></div>
+      <div class="col-md-6"><div class="card h-100"><div class="card-header">Leave</div>
+        <ul class="list-group list-group-flush small">
+          {% for l in leaves %}<li class="list-group-item d-flex justify-content-between"><span>{{ l.from_date|d }} → {{ l.to_date|d }}</span>{{ status_badge(l.status) }}</li>
+          {% else %}<li class="list-group-item text-muted">None</li>{% endfor %}
+        </ul></div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

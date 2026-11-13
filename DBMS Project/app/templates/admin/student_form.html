@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Register student' if new else 'Edit student' }}{% endblock %}
+{% block heading %}<a href="{{ url_for('admin.students') }}" class="text-decoration-none text-muted">Students</a> / {{ 'Register' if new else 'Edit' }}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:900px"><div class="card-body">
+  <form method="post" class="row g-3">
+    <div class="col-md-4"><label class="form-label">Roll number *</label>
+      <input name="roll_no" value="{{ s.roll_no or '' }}" class="form-control" required maxlength="20" placeholder="24CSE037"></div>
+    <div class="col-md-8"><label class="form-label">Full name *</label>
+      <input name="name" value="{{ s.name or '' }}" class="form-control" required></div>
+    <div class="col-md-3"><label class="form-label">Gender *</label>
+      <select name="gender" class="form-select" required>
+        <option value="M" {% if s.gender == 'M' %}selected{% endif %}>Male</option>
+        <option value="F" {% if s.gender == 'F' %}selected{% endif %}>Female</option></select></div>
+    <div class="col-md-3"><label class="form-label">Date of birth</label>
+      <input type="date" name="dob" value="{{ s.dob or '' }}" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Department *</label>
+      <select name="dept_id" class="form-select" required>
+        {% for d in departments %}<option value="{{ d.dept_id }}" {% if s.dept_id|string == d.dept_id|string %}selected{% endif %}>{{ d.dept_code }}</option>{% endfor %}</select></div>
+    <div class="col-md-3"><label class="form-label">Year *</label>
+      <input type="number" name="year_of_study" min="1" max="5" value="{{ s.year_of_study or 1 }}" class="form-control" required></div>
+    <div class="col-md-4"><label class="form-label">Phone * <span class="small text-muted">(10 digits)</span></label>
+      <input name="phone" value="{{ s.phone or '' }}" class="form-control" required pattern="[0-9]{10}"></div>
+    <div class="col-md-8"><label class="form-label">Email</label>
+      <input type="email" name="email" value="{{ s.email or '' }}" class="form-control"></div>
+    <div class="col-md-6"><label class="form-label">Guardian name</label>
+      <input name="guardian_name" value="{{ s.guardian_name or '' }}" class="form-control"></div>
+    <div class="col-md-6"><label class="form-label">Guardian phone</label>
+      <input name="guardian_phone" value="{{ s.guardian_phone or '' }}" class="form-control" pattern="[0-9]{10}"></div>
+    <div class="col-12"><label class="form-label">Address</label>
+      <textarea name="address" class="form-control" rows="2">{{ s.address or '' }}</textarea></div>
+    <div class="col-12">
+      <button class="btn btn-primary">{{ 'Register' if new else 'Save changes' }}</button>
+      {% if new %}<span class="small text-muted ms-2">The student can sign in with their roll number as both username and password.</span>{% endif %}
+    </div>
+  </form>
+</div></div>
+{% endblock %}

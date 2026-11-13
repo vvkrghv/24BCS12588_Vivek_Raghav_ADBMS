@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, empty %}
+{% block title %}Complaints{% endblock %}
+{% block heading %}Complaints{% endblock %}
+{% block content %}
+<ul class="nav nav-pills mb-3">
+  {% for v, l in [('active', 'Unresolved'), ('OPEN', 'Open'), ('IN_PROGRESS', 'In progress'), ('RESOLVED', 'Resolved'), ('all', 'All')] %}
+    <li class="nav-item"><a class="nav-link {% if status == v %}active{% endif %}" href="?status={{ v }}">{{ l }}</a></li>{% endfor %}
+</ul>
+<div class="card"><div class="table-responsive">
+  <table class="table align-middle">
+    <thead><tr><th>#</th><th>Raised</th><th>Student / Room</th><th>Issue</th><th>Priority</th><th>Status</th><th>Age</th><th style="min-width:340px">Action</th></tr></thead>
+    <tbody>{% for c in complaints %}
+      <tr>
+        <td class="text-muted">{{ c.complaint_id }}</td>
+        <td class="small">{{ c.created_at|dt('%d %b, %I:%M %p') }}</td>
+        <td>{{ c.student_name }}<div class="small text-muted">{{ c.roll_no }} · {{ c.room_label or 'no room' }}</div></td>
+        <td><span class="badge text-bg-light">{{ c.category }}</span><div class="small">{{ c.description }}</div></td>
+        <td>{{ status_badge(c.priority) }}</td>
+        <td>{{ status_badge(c.status) }}{% if c.staff_name %}<div class="small text-muted">{{ c.staff_name }}</div>{% endif %}</td>
+        <td class="small">{{ c.age|hours }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin.complaint_update', cid=c.complaint_id) }}" class="d-flex gap-1">
+            <select name="staff_id" class="form-select form-select-sm">
+              <option value="">— assign —</option>
+              {% for s in staff %}<option value="{{ s.staff_id }}" {% if s.staff_id == c.assigned_staff_id %}selected{% endif %}>{{ s.name }} ({{ s.role|lower }})</option>{% endfor %}
+            </select>
+            <select name="status" class="form-select form-select-sm" style="max-width:130px">
+              {% for st in ['OPEN', 'IN_PROGRESS', 'RESOLVED'] %}<option {% if st == c.status %}selected{% endif %}>{{ st }}</option>{% endfor %}
+            </select>
+            <button class="btn btn-sm btn-primary"><i class="bi bi-check2"></i></button>
+          </form>
+        </td>
+      </tr>
+    {% else %}{{ empty(8, 'No complaints in this view.') }}{% endfor %}</tbody>
+  </table>
+</div>
+</div>
+{% endblock %}

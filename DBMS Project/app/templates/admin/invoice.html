@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, empty %}
+{% block title %}Invoice #{{ inv.invoice_id }}{% endblock %}
+{% block heading %}<a href="{{ url_for('admin.fees') }}" class="text-decoration-none text-muted">Fees</a> / Invoice #{{ inv.invoice_id }}{% endblock %}
+{% block content %}
+{% set balance = inv.amount + inv.fine - inv.paid %}
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card mb-3"><div class="card-body">
+      <div class="d-flex justify-content-between"><h2 class="h5">Invoice #{{ inv.invoice_id }}</h2>{{ status_badge(inv.status) }}</div>
+      <p class="mb-3"><a href="{{ url_for('admin.student_detail', student_id=inv.student_id) }}">{{ inv.name }}</a> · <code>{{ inv.roll_no }}</code></p>
+      <table class="table table-sm mb-0">
+        <tr><td>Term</td><td class="text-end">{{ inv.academic_year }} · Semester {{ inv.semester }}</td></tr>
+        <tr><td>Room type</td><td class="text-end">{{ inv.type_code }}</td></tr>
+        <tr><td>Issued / Due</td><td class="text-end">{{ inv.issued_on|d }} / {{ inv.due_date|d }}</td></tr>
+        <tr><td>Hostel fee</td><td class="text-end">{{ inv.amount|inr }}</td></tr>
+        <tr><td>Late fine</td><td class="text-end">{{ inv.fine|inr }}</td></tr>
+        <tr><td>Paid</td><td class="text-end text-success">− {{ inv.paid|inr }}</td></tr>
+        <tr class="fw-bold"><td>Balance</td><td class="text-end {% if balance > 0 %}text-danger{% endif %}">{{ balance|inr }}</td></tr>
+      </table>
+    </div></div>
+    {% if balance > 0 %}
+    <div class="card"><div class="card-header">Record payment</div><div class="card-body">
+      <form method="post" class="row g-2">
+        <div class="col-6"><label class="form-label small">Amount</label>
+          <input name="amount" type="number" step="0.01" min="0.01" value="{{ balance }}" class="form-control form-control-sm" required></div>
+        <div class="col-6"><label class="form-label small">Mode</label>
+          <select name="mode" class="form-select form-select-sm">{% for m in ['CASH','UPI','CARD','NETBANKING','DD'] %}<option>{{ m }}</option>{% endfor %}</select></div>
+        <div class="col-12"><label class="form-label small">Transaction ref. (optional)</label><input name="txn_ref" class="form-control form-control-sm"></div>
+        <div class="col-12"><button class="btn btn-sm btn-success">Save payment</button></div>
+      </form>
+    </div></div>
+    {% endif %}
+  </div>
+  <div class="col-lg-7">
+    <div class="card"><div class="card-header">Payments</div>
+      <div class="table-responsive"><table class="table table-sm align-middle">
+        <thead><tr><th>#</th><th>Date</th><th>Mode</th><th>Reference</th><th class="text-end">Amount</th></tr></thead>
+        <tbody>{% for p in payments %}
+          <tr><td class="text-muted">{{ p.payment_id }}</td><td>{{ p.paid_on|dt }}</td><td>{{ p.mode }}</td><td><code>{{ p.txn_ref or '—' }}</code></td><td class="text-end">{{ p.amount|inr }}</td></tr>
+        {% else %}{{ empty(5, 'No payments yet') }}{% endfor %}</tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

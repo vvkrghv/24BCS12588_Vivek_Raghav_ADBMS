@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty %}
+{% block title %}Visitors{% endblock %}
+{% block heading %}My visitors{% endblock %}
+{% block content %}
+<div class="card"><div class="table-responsive">
+  <table class="table align-middle">
+    <thead><tr><th>Visitor</th><th>Relation</th><th>Phone</th><th>In</th><th>Out</th></tr></thead>
+    <tbody>{% for v in visitors %}
+      <tr><td>{{ v.visitor_name }}</td><td>{{ v.relation }}</td><td>{{ v.phone or '—' }}</td><td>{{ v.in_time|dt }}</td>
+          <td>{% if v.out_time %}{{ v.out_time|dt }}{% else %}<span class="badge text-bg-warning">inside</span>{% endif %}</td></tr>
+    {% else %}{{ empty(5, 'No visitors recorded.') }}{% endfor %}</tbody>
+  </table>
+</div></div>
+{% endblock %}

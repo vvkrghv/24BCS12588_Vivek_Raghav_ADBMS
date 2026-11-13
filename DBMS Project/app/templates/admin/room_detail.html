@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, empty %}
+{% block title %}Room {{ room.room_label }}{% endblock %}
+{% block heading %}<a href="{{ url_for('admin.rooms') }}" class="text-decoration-none text-muted">Rooms</a> / {{ room.room_label }}{% endblock %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card mb-3"><div class="card-body">
+      <h2 class="h4 mb-1">{{ room.room_label }} {{ status_badge(room.occupancy_state) }}</h2>
+      <div class="text-muted mb-3">{{ room.block_name }} · Floor {{ room.floor }}</div>
+      <dl class="row mb-0 small">
+        <dt class="col-5">Type</dt><dd class="col-7">{{ room.type_code }}{% if room.has_ac %} (AC){% endif %}</dd>
+        <dt class="col-5">Capacity</dt><dd class="col-7">{{ room.capacity }}</dd>
+        <dt class="col-5">Occupied</dt><dd class="col-7">{{ room.current_occupancy }}</dd>
+        <dt class="col-5">Vacancies</dt><dd class="col-7">{{ room.vacancies }}</dd>
+        <dt class="col-5">Status</dt><dd class="col-7">{{ status_badge(room.status) }}</dd>
+      </dl>
+      <form method="post" action="{{ url_for('admin.room_status', room_id=room.room_id) }}" class="mt-3">
+        {% if room.status == 'AVAILABLE' %}
+          <input type="hidden" name="status" value="MAINTENANCE">
+          <button class="btn btn-sm btn-outline-secondary w-100"><i class="bi bi-wrench"></i> Mark under maintenance</button>
+        {% else %}
+          <input type="hidden" name="status" value="AVAILABLE">
+          <button class="btn btn-sm btn-outline-success w-100"><i class="bi bi-check2"></i> Mark available</button>
+        {% endif %}
+      </form>
+    </div></div>
+
+    <div class="card"><div class="card-header">Allocate a student here</div><div class="card-body">
+      {% if candidates %}
+      <p class="small text-muted">Unallocated {{ 'male' if room.gender == 'M' else 'female' }} students.</p>
+      <form method="post" id="allocForm">
+        <select class="form-select form-select-sm mb-2" id="allocStudent" required>
+          {% for c in candidates %}<option value="{{ c.student_id }}">{{ c.roll_no }} · {{ c.name }}</option>{% endfor %}
+        </select>
+        <input type="hidden" name="room_id" value="{{ room.room_id }}">
+        <button class="btn btn-sm btn-primary w-100">Allocate</button>
+      </form>
+      {% else %}<p class="small text-muted mb-0">Every active {{ 'male' if room.gender == 'M' else 'female' }} student already has a room.</p>{% endif %}
+    </div></div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card mb-3"><div class="card-header">Allocation history</div>
+      <div class="table-responsive"><table class="table table-sm align-middle">
+        <thead><tr><th>Student</th><th>From</th><th>To</th><th>Status</th><th>Remarks</th></tr></thead>
+        <tbody>
+        {% for h in history %}
+          <tr><td><a href="{{ url_for('admin.student_detail', student_id=h.student_id) }}">{{ h.name }}</a> <span class="small text-muted">{{ h.roll_no }}</span></td>
+              <td>{{ h.allocated_on|d }}</td><td>{{ h.vacated_on|d }}</td><td>{{ status_badge(h.status) }}</td><td class="small">{{ h.remarks or '' }}</td></tr>
+        {% else %}{{ empty(5, 'Never allocated') }}{% endfor %}
+        </tbody></table></div>
+    </div>
+    <div class="card"><div class="card-header">Complaints from this room</div>
+      <div class="table-responsive"><table class="table table-sm align-middle">
+        <thead><tr><th>Date</th><th>Category</th><th>Issue</th><th>Status</th></tr></thead>
+        <tbody>
+        {% for c in complaints %}
+          <tr><td>{{ c.created_at|dt('%d %b %Y') }}</td><td>{{ c.category|title }}</td><td>{{ c.description }}</td><td>{{ status_badge(c.status) }}</td></tr>
+        {% else %}{{ empty(4) }}{% endfor %}
+        </tbody></table></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  const f = document.getElementById('allocForm');
+  if (f) f.addEventListener('submit', () => {
+    f.action = '{{ url_for("admin.student_allocate", student_id=0) }}'.replace('/0/', '/' + document.getElementById('allocStudent').value + '/');
+  });
+</script>
+{% endblock %}

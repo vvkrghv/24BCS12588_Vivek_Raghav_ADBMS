@@ -1,0 +1,35 @@
+{% macro status_badge(s) -%}
+  {%- set colors = {
+    'ACTIVE':'success','VACATED':'secondary',
+    'PAID':'success','PARTIAL':'warning','UNPAID':'danger',
+    'OPEN':'danger','IN_PROGRESS':'warning','RESOLVED':'success',
+    'PENDING':'warning','APPROVED':'success','REJECTED':'secondary',
+    'AVAILABLE':'success','MAINTENANCE':'secondary',
+    'EMPTY':'success','FULL':'danger',
+    'HIGH':'danger','MEDIUM':'warning','LOW':'secondary'} -%}
+  <span class="badge text-bg-{{ colors.get(s, 'light') }}">{{ s|replace('_', ' ')|title }}</span>
+{%- endmacro %}
+
+{% macro empty(cols, text='Nothing here yet.') -%}
+  <tr><td colspan="{{ cols }}" class="text-center text-muted py-4">{{ text }}</td></tr>
+{%- endmacro %}
+
+{% macro result_table(result) -%}
+  {% if result.cols %}
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead><tr>{% for c in result.cols %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+      <tbody>
+        {% for row in result.rows %}
+          <tr>{% for v in row %}<td>{% if v is none %}<span class="text-muted">NULL</span>{% else %}{{ v }}{% endif %}</td>{% endfor %}</tr>
+        {% else %}
+          {{ empty(result.cols|length, '0 rows') }}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  <div class="small text-muted px-3 py-2 border-top">
+    {{ result.status }} · {{ result.rows|length }} row(s){% if result.truncated %} (truncated){% endif %} · {{ '%.1f'|format(result.ms) }} ms
+  </div>
+{%- endmacro %}

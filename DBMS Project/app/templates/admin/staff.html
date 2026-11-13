@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty %}
+{% block title %}Staff{% endblock %}
+{% block heading %}Staff{% endblock %}
+{% block content %}
+<div class="card mb-3"><div class="card-header">Add staff member</div><div class="card-body">
+  <form method="post" class="row g-2 align-items-end">
+    <div class="col-md-3"><label class="form-label small">Name</label><input name="name" class="form-control form-control-sm" required></div>
+    <div class="col-md-2"><label class="form-label small">Role</label>
+      <select name="role" class="form-select form-select-sm">{% for r in ['WARDEN','SECURITY','CLEANER','ELECTRICIAN','PLUMBER','CARPENTER','MESS'] %}<option>{{ r }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label small">Phone</label><input name="phone" class="form-control form-control-sm" required pattern="[0-9]{10}"></div>
+    <div class="col-md-2"><label class="form-label small">Block</label>
+      <select name="block_id" class="form-select form-select-sm"><option value="">— all —</option>{% for b in blocks %}<option value="{{ b.block_id }}">{{ b.block_name }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label small">Salary</label><input name="salary" type="number" min="1" class="form-control form-control-sm"></div>
+    <div class="col-md-1"><button class="btn btn-sm btn-primary w-100">Add</button></div>
+  </form>
+</div></div>
+<div class="card"><div class="table-responsive">
+  <table class="table align-middle">
+    <thead><tr><th>Name</th><th>Role</th><th>Phone</th><th>Block</th><th class="text-end">Salary</th><th>Joined</th><th class="text-end">Open jobs</th><th></th></tr></thead>
+    <tbody>{% for s in staff %}
+      <tr class="{% if not s.is_active %}text-muted{% endif %}">
+        <td>{{ s.name }} {% if s.is_block_warden %}<span class="badge text-bg-primary">block warden</span>{% endif %}{% if not s.is_active %}<span class="badge text-bg-secondary">inactive</span>{% endif %}</td>
+        <td>{{ s.role|title }}</td><td>{{ s.phone }}</td><td>{{ s.block_name or 'All blocks' }}</td>
+        <td class="text-end">{{ s.salary|inr }}</td><td>{{ s.joined_on|d }}</td><td class="text-end">{{ s.open_jobs }}</td>
+        <td><form method="post" action="{{ url_for('admin.staff_toggle', staff_id=s.staff_id) }}"><button class="btn btn-sm btn-light">{{ 'Deactivate' if s.is_active else 'Activate' }}</button></form></td>
+      </tr>
+    {% else %}{{ empty(8) }}{% endfor %}</tbody>
+  </table>
+</div></div>
+{% endblock %}

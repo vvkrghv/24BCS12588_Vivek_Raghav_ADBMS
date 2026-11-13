@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge %}
+{% block title %}My hostel{% endblock %}
+{% block heading %}Welcome, {{ me.name.split()[0] }}{% endblock %}
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="card stat h-100"><div class="label">My room</div>
+    <div class="value">{{ room.room_label if room else '—' }}</div>
+    <div class="small text-muted">{% if room %}{{ room.block_name }} · Floor {{ room.floor }} · {{ room.type_code }}{% else %}No room allocated yet{% endif %}</div></div></div>
+  <div class="col-md-4"><div class="card stat h-100"><div class="label">Fee balance</div>
+    <div class="value {% if me.balance > 0 %}text-danger{% else %}text-success{% endif %}">{{ me.balance|inr }}</div>
+    <div class="small"><a href="{{ url_for('student.fees') }}">{{ 'Pay now' if me.balance > 0 else 'View receipts' }} →</a></div></div></div>
+  <div class="col-md-4"><div class="card stat h-100"><div class="label">Warden</div>
+    <div class="value" style="font-size:1.1rem">{{ room.warden_name if room and room.warden_name else '—' }}</div>
+    <div class="small text-muted">{{ room.warden_phone if room else '' }}</div></div></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card mb-3"><div class="card-header">Roommates</div>
+      <ul class="list-group list-group-flush">
+        {% for r in roommates %}
+          <li class="list-group-item"><strong>{{ r.name }}</strong> <span class="text-muted small">{{ r.roll_no }} · {{ r.dept_code }} · Year {{ r.year_of_study }} · {{ r.phone }}</span></li>
+        {% else %}<li class="list-group-item text-muted">{{ 'No roommates.' if room else 'Not allocated.' }}</li>{% endfor %}
+      </ul></div>
+    <div class="card"><div class="card-header">My profile</div><div class="card-body">
+      <dl class="row small mb-0">
+        <dt class="col-4">Roll no.</dt><dd class="col-8">{{ me.roll_no }}</dd>
+        <dt class="col-4">Department</dt><dd class="col-8">{{ me.dept_name }}, Year {{ me.year_of_study }}</dd>
+        <dt class="col-4">Phone</dt><dd class="col-8">{{ me.phone }}</dd>
+        <dt class="col-4">Email</dt><dd class="col-8">{{ me.email or '—' }}</dd>
+        <dt class="col-4">Guardian</dt><dd class="col-8">{{ me.guardian_name or '—' }} {{ me.guardian_phone or '' }}</dd>
+      </dl></div></div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card mb-3"><div class="card-header d-flex justify-content-between">Recent complaints <a href="{{ url_for('student.complaints') }}" class="small">Raise new</a></div>
+      <ul class="list-group list-group-flush small">
+        {% for c in complaints %}<li class="list-group-item d-flex justify-content-between"><span>{{ c.category|title }}: {{ c.description|truncate(45) }}</span>{{ status_badge(c.status) }}</li>
+        {% else %}<li class="list-group-item text-muted">None</li>{% endfor %}
+      </ul></div>
+    <div class="card"><div class="card-header d-flex justify-content-between">Leave <a href="{{ url_for('student.leaves') }}" class="small">Apply</a></div>
+      <ul class="list-group list-group-flush small">
+        {% for l in leaves %}<li class="list-group-item d-flex justify-content-between"><span>{{ l.from_date|d }} → {{ l.to_date|d }} · {{ l.reason|truncate(30) }}</span>{{ status_badge(l.status) }}</li>
+        {% else %}<li class="list-group-item text-muted">None</li>{% endfor %}
+      </ul></div>
+  </div>
+</div>
+{% endblock %}

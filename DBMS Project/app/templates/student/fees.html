@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, empty %}
+{% block title %}Fees{% endblock %}
+{% block heading %}My fees{% endblock %}
+{% block content %}
+<div class="card mb-3"><div class="card-header">Invoices</div>
+  <div class="table-responsive"><table class="table align-middle">
+    <thead><tr><th>Term</th><th>Room type</th><th>Due</th><th class="text-end">Fee</th><th class="text-end">Fine</th><th class="text-end">Paid</th><th class="text-end">Balance</th><th>Status</th><th style="min-width:260px">Pay</th></tr></thead>
+    <tbody>{% for i in invoices %}{% set bal = i.amount + i.fine - i.paid %}
+      <tr><td>{{ i.academic_year }} S{{ i.semester }}</td><td>{{ i.type_code }}</td><td>{{ i.due_date|d }}</td>
+          <td class="text-end">{{ i.amount|inr }}</td><td class="text-end">{{ i.fine|inr }}</td><td class="text-end">{{ i.paid|inr }}</td>
+          <td class="text-end fw-semibold {% if bal > 0 %}text-danger{% endif %}">{{ bal|inr }}</td><td>{{ status_badge(i.status) }}</td>
+          <td>{% if bal > 0 %}
+            <form method="post" class="d-flex gap-1">
+              <input type="hidden" name="invoice_id" value="{{ i.invoice_id }}">
+              <input name="amount" type="number" step="0.01" min="1" value="{{ bal }}" class="form-control form-control-sm" style="max-width:110px">
+              <select name="mode" class="form-select form-select-sm" style="max-width:110px"><option>UPI</option><option>CARD</option><option>NETBANKING</option></select>
+              <button class="btn btn-sm btn-success">Pay</button>
+            </form>{% endif %}</td></tr>
+    {% else %}{{ empty(9, 'No invoices yet.') }}{% endfor %}</tbody>
+  </table></div>
+</div>
+<div class="card"><div class="card-header">Payment history</div>
+  <div class="table-responsive"><table class="table table-sm align-middle">
+    <thead><tr><th>Date</th><th>Term</th><th>Mode</th><th>Reference</th><th class="text-end">Amount</th></tr></thead>
+    <tbody>{% for p in payments %}
+      <tr><td>{{ p.paid_on|dt }}</td><td>{{ p.academic_year }} S{{ p.semester }}</td><td>{{ p.mode }}</td><td><code>{{ p.txn_ref or '—' }}</code></td><td class="text-end">{{ p.amount|inr }}</td></tr>
+    {% else %}{{ empty(5) }}{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endblock %}

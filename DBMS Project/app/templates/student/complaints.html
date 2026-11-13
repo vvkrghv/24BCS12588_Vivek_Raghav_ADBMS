@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, empty %}
+{% block title %}Complaints{% endblock %}
+{% block heading %}Complaints{% endblock %}
+{% block content %}
+<div class="card mb-3"><div class="card-header">Raise a complaint</div><div class="card-body">
+  <form method="post" class="row g-2 align-items-end">
+    <div class="col-md-3"><label class="form-label small">Category</label>
+      <select name="category" class="form-select form-select-sm">{% for c in ['ELECTRICAL','PLUMBING','CLEANING','FURNITURE','INTERNET','MESS','OTHER'] %}<option value="{{ c }}">{{ c|title }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label small">Priority</label>
+      <select name="priority" class="form-select form-select-sm"><option>LOW</option><option selected>MEDIUM</option><option>HIGH</option></select></div>
+    <div class="col-md-6"><label class="form-label small">Describe the issue</label><input name="description" class="form-control form-control-sm" required minlength="5"></div>
+    <div class="col-md-1"><button class="btn btn-sm btn-primary w-100">Submit</button></div>
+  </form>
+</div></div>
+<div class="card"><div class="table-responsive">
+  <table class="table align-middle">
+    <thead><tr><th>Raised</th><th>Room</th><th>Category</th><th>Issue</th><th>Priority</th><th>Status</th><th>Assigned to</th><th>Resolved</th></tr></thead>
+    <tbody>{% for c in complaints %}
+      <tr><td class="small">{{ c.created_at|dt }}</td><td>{{ c.room_label or '—' }}</td><td>{{ c.category|title }}</td><td>{{ c.description }}</td>
+          <td>{{ status_badge(c.priority) }}</td><td>{{ status_badge(c.status) }}</td><td>{{ c.staff_name or '—' }}</td><td class="small">{{ c.resolved_at|dt }}</td></tr>
+    {% else %}{{ empty(8, 'You have not raised any complaints.') }}{% endfor %}</tbody>
+  </table>
+</div></div>
+{% endblock %}

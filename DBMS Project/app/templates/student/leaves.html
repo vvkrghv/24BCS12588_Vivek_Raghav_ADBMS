@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, empty %}
+{% block title %}Leave{% endblock %}
+{% block heading %}Leave / outpass{% endblock %}
+{% block content %}
+<div class="card mb-3"><div class="card-header">Apply for leave</div><div class="card-body">
+  <form method="post" class="row g-2 align-items-end">
+    <div class="col-md-2"><label class="form-label small">From</label><input type="date" name="from_date" min="{{ today }}" class="form-control form-control-sm" required></div>
+    <div class="col-md-2"><label class="form-label small">To</label><input type="date" name="to_date" min="{{ today }}" class="form-control form-control-sm" required></div>
+    <div class="col-md-2"><label class="form-label small">Destination</label><input name="destination" class="form-control form-control-sm"></div>
+    <div class="col-md-5"><label class="form-label small">Reason</label><input name="reason" class="form-control form-control-sm" required></div>
+    <div class="col-md-1"><button class="btn btn-sm btn-primary w-100">Apply</button></div>
+  </form>
+</div></div>
+<div class="card"><div class="table-responsive">
+  <table class="table align-middle">
+    <thead><tr><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Destination</th><th>Status</th><th></th></tr></thead>
+    <tbody>{% for l in leaves %}
+      <tr><td>{{ l.from_date|d }}</td><td>{{ l.to_date|d }}</td><td>{{ (l.to_date - l.from_date).days + 1 }}</td><td>{{ l.reason }}</td><td>{{ l.destination or '—' }}</td>
+          <td>{{ status_badge(l.status) }}{% if l.reviewer %} <span class="small text-muted">by {{ l.reviewer }}</span>{% endif %}</td>
+          <td>{% if l.status == 'PENDING' %}<form method="post" action="{{ url_for('student.leave_cancel', leave_id=l.leave_id) }}"><button class="btn btn-sm btn-outline-secondary">Withdraw</button></form>{% endif %}</td></tr>
+    {% else %}{{ empty(7, 'No leave requests.') }}{% endfor %}</tbody>
+  </table>
+</div></div>
+{% endblock %}

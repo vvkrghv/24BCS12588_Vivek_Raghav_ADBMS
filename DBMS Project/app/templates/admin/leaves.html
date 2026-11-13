@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, empty %}
+{% block title %}Leave requests{% endblock %}
+{% block heading %}Leave requests{% endblock %}
+{% block content %}
+<ul class="nav nav-pills mb-3">
+  {% for v in ['PENDING', 'APPROVED', 'REJECTED', 'ALL'] %}
+    <li class="nav-item"><a class="nav-link {% if status == v %}active{% endif %}" href="?status={{ v }}">{{ v|title }}</a></li>{% endfor %}
+</ul>
+<div class="card"><div class="table-responsive">
+  <table class="table align-middle">
+    <thead><tr><th>Student</th><th>Room</th><th>Dates</th><th>Days</th><th>Reason / Destination</th><th>Guardian</th><th>Status</th><th></th></tr></thead>
+    <tbody>{% for l in leaves %}
+      <tr>
+        <td>{{ l.name }}<div class="small text-muted">{{ l.roll_no }}</div></td>
+        <td>{{ l.room_label or '—' }}</td>
+        <td class="small">{{ l.from_date|d }} → {{ l.to_date|d }}</td>
+        <td>{{ (l.to_date - l.from_date).days + 1 }}</td>
+        <td>{{ l.reason }}<div class="small text-muted">{{ l.destination or '' }}</div></td>
+        <td class="small">{{ l.guardian_phone or '—' }}</td>
+        <td>{{ status_badge(l.status) }}{% if l.reviewer %}<div class="small text-muted">by {{ l.reviewer }}</div>{% endif %}</td>
+        <td class="text-nowrap">{% if l.status == 'PENDING' %}
+          <form method="post" action="{{ url_for('admin.leave_review', leave_id=l.leave_id, decision='APPROVED') }}" class="d-inline"><button class="btn btn-sm btn-success"><i class="bi bi-check-lg"></i></button></form>
+          <form method="post" action="{{ url_for('admin.leave_review', leave_id=l.leave_id, decision='REJECTED') }}" class="d-inline"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg"></i></button></form>
+        {% endif %}</td>
+      </tr>
+    {% else %}{{ empty(8, 'No requests.') }}{% endfor %}</tbody>
+  </table>
+</div></div>
+{% endblock %}
