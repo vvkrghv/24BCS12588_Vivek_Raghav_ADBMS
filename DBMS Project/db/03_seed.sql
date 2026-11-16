@@ -6,6 +6,7 @@
 --   * every payment updates the invoice status
 -- =====================================================================
 SET search_path = hostel, public;
+SET TIME ZONE 'Asia/Kolkata';   -- sample timestamps below are Indian time, whatever the server's zone
 SELECT set_config('app.current_user', 'seed-script', false);
 
 -- ---------------- Admin logins ----------------

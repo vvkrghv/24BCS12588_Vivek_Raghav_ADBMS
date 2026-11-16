@@ -49,6 +49,11 @@ def run_file(conn, name):
 
 def main():
     ensure_database()
+    with psycopg.connect(DATABASE_URL) as conn:
+        if conn.execute("SELECT 1 FROM pg_subscription WHERE subdbid = "
+                        "(SELECT oid FROM pg_database WHERE datname = current_database())").fetchone():
+            sys.exit("This database is a live mirror (python sync_local.py). "
+                     "Run 'python sync_local.py --stop' first if you really want to reset it.")
     files = ["01_schema.sql", "02_logic.sql"]
     if "--no-seed" not in sys.argv:
         files.append("03_seed.sql")
